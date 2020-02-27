@@ -24,11 +24,13 @@ AVFormatContext* ic = nullptr;
 int videoIndex = 0;
 int audioIndex = 1;
 
-static double r2d(AVRational r) {
+static double r2d(AVRational r)
+{
     return r.den == 0 ? 0 : (double)r.num / (double)r.den;
 }
 
-bool ReadH264(const char* url) {
+bool ReadH264(const char* url)
+{
     // 初始化封装库
     //avcodec_register_all();
 
@@ -47,7 +49,8 @@ bool ReadH264(const char* url) {
                      &opts
                  );
 
-    if (result != 0) {
+    if (result != 0)
+    {
         char buf[1024] = { 0 };
         av_strerror(result, buf, sizeof(buf) - 1);
         std::cout << buf << std::endl;
@@ -58,7 +61,8 @@ bool ReadH264(const char* url) {
 
     // retrieve stream information
     result = avformat_find_stream_info(ic, NULL);
-    if (result < 0) {
+    if (result < 0)
+    {
         fprintf(stderr, "Could not find stream information\n");
     }
 
@@ -84,8 +88,10 @@ bool ReadH264(const char* url) {
     // as->codecpar->frame_size * as->codecpar->channels * 样本格式占用字节
 }
 
-AVPacket* GetPacket() {
-    if (ic == nullptr) {
+AVPacket* GetPacket()
+{
+    if (ic == nullptr)
+    {
         return nullptr;
     }
 
@@ -93,7 +99,8 @@ AVPacket* GetPacket() {
 
     // 读取一帧并分配空间
     int re = av_read_frame(ic, pkt);
-    if (re != 0) {
+    if (re != 0)
+    {
         av_packet_free(&pkt);
         return nullptr;
     }
@@ -105,14 +112,16 @@ AVPacket* GetPacket() {
     return pkt;
 }
 
-void FreePacket(AVPacket* pkt) {
+void FreePacket(AVPacket* pkt)
+{
     av_packet_free(&pkt);
     pkt = nullptr;
 }
 
 int pts = 0;
 int count = 0;
-void H264ToPs(AVPacket* pkt) {
+void H264ToPs(AVPacket* pkt)
+{
     int64_t buf_size = pkt->size + 512;
     //std::cout << "buf_size: " << buf_size << " scr: " << scr/3600 << std::endl;
 
@@ -122,12 +131,14 @@ void H264ToPs(AVPacket* pkt) {
     FrameInfo::Ptr frame_info = std::make_shared<FrameInfo>();
 
     static bool i_frame = false;
-    if (pkt->flags) {
+    if (pkt->flags)
+    {
         frame_info->is_i_frame = true;
         //i_frame = true;
     }
 
-    if (i_frame == false) {
+    if (i_frame == false)
+    {
         //return;
     }
 
@@ -146,7 +157,8 @@ void H264ToPs(AVPacket* pkt) {
     int len = make_packet.MakePsStream(pkt->data, pkt->size, frame_info, ps_buf);
     auto size = fwrite(ps_buf, char_size, len, w_file);
     fflush(w_file);
-    if (size != len) {
+    if (size != len)
+    {
         std::cout << "size:len" << size << ":" << len << std::endl;
     }
 
@@ -156,22 +168,27 @@ void H264ToPs(AVPacket* pkt) {
 }
 
 std::string url = "Onion.264";
-int main() {
+std::string out_file = "h264.ps";
+int main()
+{
     url = "http://ivi.bupt.edu.cn/hls/cctv1hd.m3u8";
     //url = "rtsp://admin:admin123@10.169.241.24/cam/realmonitor?channel=1&subtype=0";
     //url = "test.mp4";
     ReadH264(url.c_str());
 
-    w_file = fopen("h264.ps", "wb");
+    w_file = fopen(out_file.c_str(), "wb");
 
     int i = 0;
-    while (i < 25 * 60) {
+    while (i < 25 * 60)
+    {
         AVPacket* pkt = GetPacket();
-        if (pkt == nullptr) {
+        if (pkt == nullptr)
+        {
             break;
         }
 
-        if (pkt->stream_index == videoIndex) {
+        if (pkt->stream_index == videoIndex)
+        {
             H264ToPs(pkt);
             ++i;
         }
